@@ -47,7 +47,7 @@ int findDevice()
 int setupDevice()
 {
 	char *logname ="adbsetup.log";
-        char cmd[CMD_SIZE] = "adb forward tcp:10010 tcp:10010 > ";
+        char cmd[CMD_SIZE] = {0};
 	int ret = 0;
 	sprintf(cmd, "adb forward tcp:%d tcp:%d > %s ", LOCAL_PORT,REMOTE_PORT,logname);
         ret = system(cmd);

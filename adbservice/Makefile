@@ -1,7 +1,7 @@
 CXX = gcc
-INCLUDEDIR = -I/data/dxue/b2g_ics_unagi/adbservice -I/usr/include
+INCLUDEDIR = -I./ -I/usr/include
 LIBDIR = -ladbservice 
-LDFLAGS = -L/data/dxue/b2g_ics_unagi/adbservice -L/usr/lib
+LDFLAGS = -L./ -L/usr/lib
 CXXFLAGS = -g -O -Wall
 all : libadbservice.so test_so
 .PHONY : all

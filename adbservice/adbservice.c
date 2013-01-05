@@ -4,7 +4,7 @@
 
 #define BUFFER_SIZE 1024 
 #define CMD_SIZE 128
-#define LOCAL_PORT 6666
+#define LOCAL_PORT 10010
 #define REMOTE_PORT 10010
 
 int findDevice()

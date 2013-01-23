@@ -1,0 +1,22 @@
+/******************linux**************************/
+Components.utils.import("resource://gre/modules/ctypes.jsm");
+libc = ctypes.open("libadbservice.so");
+
+var findDevice = libc.declare("findDevice",
+                        ctypes.default_abi,
+                        ctypes.int);
+
+var ret = findDevice();
+alert(ret);
+
+/******************windows**************************/
+Components.utils.import("resource://gre/modules/ctypes.jsm"); 
+var lib = ctypes.open("E:\\VCProject\\adbservice\\adbservice.dll");
+
+
+var findDevice = lib.declare("findDevice",
+                         ctypes.winapi_abi,
+                         ctypes.int32_t);
+var ret = findDevice();
+lib.close();
+alert(ret);

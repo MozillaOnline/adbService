@@ -1,12 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "adbservice.h"
 
 #define BUFFER_SIZE 1024 
 #define CMD_SIZE 128
 #define LOCAL_PORT 10010
 #define REMOTE_PORT 10010
 
+#ifndef XP_LINUX
+__declspec(dllexport) 
+#endif
 int findDevice()
 {
 	char *logname ="adbfind.log"; 
@@ -43,7 +45,9 @@ int findDevice()
 	printf( "The result is %s\n", pb);
 	return 1;
 }
-
+#ifdef XP_WIN
+__declspec(dllexport) 
+#endif
 int setupDevice()
 {
 	char *logname ="adbsetup.log";
@@ -53,5 +57,5 @@ int setupDevice()
         ret = system(cmd);
 	if(ret)
 		return 0;
-        return 1;
+    return 1;
 }

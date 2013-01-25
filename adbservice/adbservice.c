@@ -20,6 +20,7 @@ BOOL ReadFromPipe(CHAR *pszOutput);
 #define CMD_SIZE 128
 #define LOCAL_PORT 10010
 #define REMOTE_PORT 10010
+char adbPath[BUFFER_SIZE] = {0};
 
 #ifndef XP_LINUX
 BOOL CreateChildProcess(TCHAR *szCmdline)
@@ -86,13 +87,21 @@ int findDevice()
 	char cmd[CMD_SIZE] = {0};
 	int ret = 0;
 	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s devices", adbPath);
+	else
+		return 0;
+
+		
 #ifndef XP_LINUX
-	TCHAR szCmdline[]=TEXT("adbWin.exe devices");
+	TCHAR szCmdline[CMD_SIZE]={0};
 	SECURITY_ATTRIBUTES saAttr; 
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
-
+	
+	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
+	
 	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
 		return 0;
 
@@ -102,11 +111,7 @@ int findDevice()
 	CreateChildProcess(szCmdline);
 	ReadFromPipe(buffer); 
 #else
-#ifdef XP_MAC
-	strcpy(cmd, "./adb-mac devices > "); 
-#else
-	strcpy(cmd, "./adb-linux devices > ");
-#endif
+	strcat(cmd, " > "); 
 	strcat(cmd, logname); 
 	ret = system(cmd);
 	if(ret)
@@ -133,6 +138,7 @@ int findDevice()
 	printf( "The result is %s\n", pb);
 	return 1;
 }
+
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
@@ -141,13 +147,17 @@ int setupDevice()
     char cmd[CMD_SIZE] = {0};
 	int ret = 0;
 	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s forward tcp:%d tcp:%d", adbPath, LOCAL_PORT,REMOTE_PORT);
+	else
+		return 0;
+		
 #ifndef XP_LINUX
 	TCHAR szCmdline[CMD_SIZE]={0};
 	SECURITY_ATTRIBUTES saAttr; 
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
-	sprintf(cmd, "adbWin.exe forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
     MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
    
 	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
@@ -159,15 +169,19 @@ int setupDevice()
 	CreateChildProcess(szCmdline);
 	ret = ReadFromPipe(NULL); 
 #else
-#ifdef XP_MAC
-	sprintf(cmd, "./adb-mac forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
-#else
-	sprintf(cmd, "./adb-linux forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
-#endif
 	ret = system(cmd);
 #endif
 
 	if(ret)
 		return 0;
     return 1;
+}
+
+#ifndef XP_LINUX
+__declspec(dllexport) 
+#endif
+void setupPath(char *path)
+{
+	if(path != NULL)
+		strcpy(adbPath,path);
 }

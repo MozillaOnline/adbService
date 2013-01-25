@@ -87,18 +87,17 @@ int findDevice()
 	char cmd[CMD_SIZE] = {0};
 	int ret = 0;
 	
-	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s devices", adbPath);
-	else
-		return 0;
-
-		
 #ifndef XP_LINUX
 	TCHAR szCmdline[CMD_SIZE]={0};
 	SECURITY_ATTRIBUTES saAttr; 
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
+	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s devices", adbPath);
+	else
+		return 0;
 	
 	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
 	
@@ -111,6 +110,10 @@ int findDevice()
 	CreateChildProcess(szCmdline);
 	ReadFromPipe(buffer); 
 #else
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s devices", adbPath);
+	else
+		return 0;
 	strcat(cmd, " > "); 
 	strcat(cmd, logname); 
 	ret = system(cmd);
@@ -146,11 +149,6 @@ int setupDevice()
 {
     char cmd[CMD_SIZE] = {0};
 	int ret = 0;
-	
-	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s forward tcp:%d tcp:%d", adbPath, LOCAL_PORT,REMOTE_PORT);
-	else
-		return 0;
 		
 #ifndef XP_LINUX
 	TCHAR szCmdline[CMD_SIZE]={0};
@@ -158,6 +156,12 @@ int setupDevice()
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
+	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s forward tcp:%d tcp:%d", adbPath, LOCAL_PORT,REMOTE_PORT);
+	else
+		return 0;
+		
     MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
    
 	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
@@ -169,14 +173,18 @@ int setupDevice()
 	CreateChildProcess(szCmdline);
 	ret = ReadFromPipe(NULL); 
 #else
+
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s forward tcp:%d tcp:%d", adbPath, LOCAL_PORT,REMOTE_PORT);
+	else
+		return 0;
 	ret = system(cmd);
 #endif
 
 	if(ret)
-		return 0;
+		return 0;*/
     return 1;
 }
-
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
@@ -185,3 +193,4 @@ void setupPath(char *path)
 	if(path != NULL)
 		strcpy(adbPath,path);
 }
+

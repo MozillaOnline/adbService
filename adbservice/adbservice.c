@@ -182,7 +182,7 @@ int setupDevice()
 #endif
 
 	if(ret)
-		return 0;*/
+		return 0;
     return 1;
 }
 #ifndef XP_LINUX

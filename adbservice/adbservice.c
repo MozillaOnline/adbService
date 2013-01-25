@@ -2,7 +2,18 @@
 #include <stdio.h>
 
 #ifndef XP_LINUX
-#include <windows.h>
+#include <windows.h> 
+#include <tchar.h>
+#include <stdio.h> 
+#include <strsafe.h>
+
+#define BUFSIZE 4096 
+
+HANDLE g_hChildStd_OUT_Rd = NULL;
+HANDLE g_hChildStd_OUT_Wr = NULL;
+ 
+BOOL CreateChildProcess(TCHAR *szCmdline); 
+BOOL ReadFromPipe(CHAR *pszOutput); 
 #endif
 
 #define BUFFER_SIZE 1024 
@@ -10,7 +21,57 @@
 #define LOCAL_PORT 10010
 #define REMOTE_PORT 10010
 
-#ifdef XP_WIN
+#ifndef XP_LINUX
+BOOL CreateChildProcess(TCHAR *szCmdline)
+{ 
+   PROCESS_INFORMATION piProcInfo; 
+   STARTUPINFO siStartInfo;
+   BOOL bSuccess = FALSE; 
+ 
+   ZeroMemory( &piProcInfo, sizeof(PROCESS_INFORMATION) );
+   ZeroMemory( &siStartInfo, sizeof(STARTUPINFO) );
+   siStartInfo.cb = sizeof(STARTUPINFO); 
+   siStartInfo.hStdError = g_hChildStd_OUT_Wr;
+   siStartInfo.hStdOutput = g_hChildStd_OUT_Wr;
+   siStartInfo.hStdInput = NULL;
+   siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+    
+   bSuccess = CreateProcess(NULL, 
+      szCmdline,
+      NULL,
+      NULL,
+      TRUE,
+      0,
+      NULL,
+      NULL,
+      &siStartInfo,
+      &piProcInfo);
+   
+   if (bSuccess )  
+   {
+      CloseHandle(piProcInfo.hProcess);
+      CloseHandle(piProcInfo.hThread);
+   }
+   return bSuccess;
+}
+ 
+BOOL ReadFromPipe(CHAR *pszOutput) 
+{ 
+   DWORD dwRead, dwWritten; 
+   CHAR chBuf[BUFSIZE] = {0}; 
+   BOOL bSuccess = FALSE;
+   HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+   CloseHandle(g_hChildStd_OUT_Wr);
+   bSuccess = ReadFile( g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+   if( ! bSuccess || dwRead == 0 ) 
+	return 0;
+	if(pszOutput != NULL)
+		strcpy(pszOutput, chBuf);
+    return 1;
+} 
+#endif
+
+#ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
 int findDevice()
@@ -25,20 +86,29 @@ int findDevice()
 	char cmd[CMD_SIZE] = {0};
 	int ret = 0;
 	
-#ifdef XP_WIN
+#ifndef XP_LINUX
+	TCHAR szCmdline[]=TEXT("adbWin.exe devices");
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
 
+	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
+		return 0;
 
+	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+		return 0;
+
+	CreateChildProcess(szCmdline);
+	ReadFromPipe(buffer); 
 #else
-	#ifdef XP_MAC
-		strcpy(cmd, "./adb-mac devices > "); 
-		strcat(cmd, logname); 
-		ret = system(cmd);
-	#else
-		strcpy(cmd, "./adb-linux devices > "); 
-		strcat(cmd, logname); 
-		ret = system(cmd);
-	#endif
+#ifdef XP_MAC
+	strcpy(cmd, "./adb-mac devices > "); 
+#else
+	strcpy(cmd, "./adb-linux devices > ");
 #endif
+	strcat(cmd, logname); 
+	ret = system(cmd);
 	if(ret)
 		return 0;
 	if( (fp = fopen(logname,"r")) == NULL )
@@ -52,6 +122,7 @@ int findDevice()
 			break;
 	}
 	fclose(fp);
+#endif
 	buffer[strlen(buffer)]='\0';
 	pb = buffer;
 	if(strncmp(pb, sigstr,strlen(sigstr)))
@@ -62,7 +133,7 @@ int findDevice()
 	printf( "The result is %s\n", pb);
 	return 1;
 }
-#ifdef XP_WIN
+#ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
 int setupDevice()
@@ -70,15 +141,29 @@ int setupDevice()
     char cmd[CMD_SIZE] = {0};
 	int ret = 0;
 	
-#ifdef XP_WIN
+#ifndef XP_LINUX
+	TCHAR szCmdline[CMD_SIZE]={0};
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
+	sprintf(cmd, "adbWin.exe forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
+    MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
+   
+	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
+		return 0;
 
+	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+		return 0;
 
+	CreateChildProcess(szCmdline);
+	ret = ReadFromPipe(NULL); 
 #else
-	#ifdef XP_MAC
-		sprintf(cmd, "./adb-mac forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
-	#else
-		sprintf(cmd, "./adb-linux forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
-	#endif
+#ifdef XP_MAC
+	sprintf(cmd, "./adb-mac forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
+#else
+	sprintf(cmd, "./adb-linux forward tcp:%d tcp:%d", LOCAL_PORT,REMOTE_PORT);
+#endif
 	ret = system(cmd);
 #endif
 

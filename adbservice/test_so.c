@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv)
 {
-    void *handler = dlopen("libadbservice.so", RTLD_NOW);
+    void *handler = dlopen("./libadbservice.so", RTLD_NOW);
     assert(handler != NULL);
     int (*findDevice)() = dlsym(handler, "findDevice");
     assert(findDevice != NULL);

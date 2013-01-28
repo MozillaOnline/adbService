@@ -2,5 +2,5 @@
 sudo rm /usr/lib/libadbservice.so 
 make clean
 make
-sudo cp libadbservice.so /usr/lib/
+#sudo cp libadbservice.so /usr/lib/
 ./test_so

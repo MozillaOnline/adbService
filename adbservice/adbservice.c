@@ -77,7 +77,6 @@ __declspec(dllexport)
 #endif
 int findDevice()
 {
-	char *logname ="adbfind.log"; 
 	char *sigstr = "List of devices attached";
 	char *devstr = "device";
 	FILE *fp = 0;
@@ -114,12 +113,8 @@ int findDevice()
 		sprintf(cmd, "%s devices", adbPath);
 	else
 		return 0;
-	strcat(cmd, " > "); 
-	strcat(cmd, logname); 
-	ret = system(cmd);
-	if(ret)
-		return 0;
-	if( (fp = fopen(logname,"r")) == NULL )
+	fp = popen (cmd, "r");
+	if (fp == NULL)
 	{
 		printf( "The file was not opened\n");
 		return 0;
@@ -129,7 +124,7 @@ int findDevice()
 		if(numread==0)
 			break;
 	}
-	fclose(fp);
+	pclose(fp);
 #endif
 	buffer[strlen(buffer)]='\0';
 	pb = buffer;

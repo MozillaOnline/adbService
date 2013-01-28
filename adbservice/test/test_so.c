@@ -9,10 +9,12 @@ int main(int argc, char **argv)
 {
     void *handler = dlopen("./libadbservice.so", RTLD_NOW);
     assert(handler != NULL);
+    int (*setupPath)() = dlsym(handler, "setupPath");
     int (*findDevice)() = dlsym(handler, "findDevice");
-    assert(findDevice != NULL);
     int (*setupDevice)() = dlsym(handler, "setupDevice");
-    assert(setupDevice != NULL);
+
+
+    printf("test so setupPath\n", (*setupPath)("../linux/adb"));
     printf("test so findDevice=%d\n", (*findDevice)());
     printf("test so setupDevice=%d\n", (*setupDevice)());
     dlclose(handler);

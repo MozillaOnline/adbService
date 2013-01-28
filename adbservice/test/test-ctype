@@ -2,18 +2,32 @@
 Components.utils.import("resource://gre/modules/ctypes.jsm");
 libc = ctypes.open("libadbservice.so");
 
+var setupPath = libc.declare("setupPath",
+                        ctypes.default_abi,
+                        ctypes.void_t,
+                        ctypes.char.ptr);
+
+var ret = setupPath("/xds/");
+
 var findDevice = libc.declare("findDevice",
                         ctypes.default_abi,
                         ctypes.int);
 
 var ret = findDevice();
+
+
 alert(ret);
 
 /******************windows**************************/
 Components.utils.import("resource://gre/modules/ctypes.jsm"); 
-var lib = ctypes.open("E:\\VCProject\\adbservice\\adbservice.dll");
+var lib = ctypes.open("E:\\VCProject\\adbservice\\windows\\adbservice.dll");
 
+var setupPath = lib.declare("setupPath",
+                        ctypes.winapi_abi,
+                        ctypes.int32_t,
+                        ctypes.char.ptr);
 
+var ret = setupPath("E:\\VCProject\\adbservice\\windows\\adbWin.exe");
 var findDevice = lib.declare("findDevice",
                          ctypes.winapi_abi,
                          ctypes.int32_t);

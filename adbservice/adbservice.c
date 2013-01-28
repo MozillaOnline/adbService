@@ -47,8 +47,7 @@ BOOL CreateChildProcess(TCHAR *szCmdline)
       NULL,
       &siStartInfo,
       &piProcInfo);
-   
-   if (bSuccess )  
+   if (bSuccess)  
    {
       CloseHandle(piProcInfo.hProcess);
       CloseHandle(piProcInfo.hThread);
@@ -58,7 +57,7 @@ BOOL CreateChildProcess(TCHAR *szCmdline)
  
 BOOL ReadFromPipe(CHAR *pszOutput) 
 { 
-   DWORD dwRead, dwWritten; 
+   DWORD dwRead; 
    CHAR chBuf[BUFSIZE] = {0}; 
    BOOL bSuccess = FALSE;
    HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -105,15 +104,18 @@ int findDevice()
 
 	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
 		return 0;
-
-	CreateChildProcess(szCmdline);
-	ReadFromPipe(buffer); 
+	if(!CreateChildProcess(szCmdline))
+		return 0;
+	if(!ReadFromPipe(buffer))
+		return 0;
 #else
 	if(strlen(adbPath) > 0)
 		sprintf(cmd, "%s devices", adbPath);
 	else
 		return 0;
+	printf( "command start: %s \n",cmd);
 	fp = popen (cmd, "r");
+	printf( "command end\n");
 	if (fp == NULL)
 	{
 		printf( "The file was not opened\n");
@@ -124,6 +126,7 @@ int findDevice()
 		if(numread==0)
 			break;
 	}
+	printf( "The file was %s\n", buffer);
 	pclose(fp);
 #endif
 	buffer[strlen(buffer)]='\0';
@@ -185,6 +188,7 @@ __declspec(dllexport)
 #endif
 void setupPath(char *path)
 {
+	printf( "The path is %s\n", path);
 	if(path != NULL)
 		strcpy(adbPath,path);
 }

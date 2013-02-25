@@ -183,6 +183,134 @@ int setupDevice()
 		return 0;
     return 1;
 }
+
+#ifndef XP_LINUX
+__declspec(dllexport) 
+#endif
+int pullfile(char *sfilepath,char *dfilepath)
+{
+	FILE *fp = 0;
+	int numread = 0;
+	char buffer[BUFFER_SIZE] = {0};
+	char *pb = 0;
+	char cmd[CMD_SIZE] = {0};
+	int ret = 0;
+	
+#ifndef XP_LINUX
+	TCHAR szCmdline[CMD_SIZE]={0};
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
+	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s pull %s %s", adbPath,sfilepath,dfilepath);
+	else
+		return 0;
+	
+	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
+	
+	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
+		return 0;
+
+	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+		return 0;
+	if(!CreateChildProcess(szCmdline))
+		return 0;
+	if(!ReadFromPipe(buffer))
+		return 0;
+#else
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s pull %s %s", adbPath,sfilepath,dfilepath);
+	else
+		return 0;
+	printf( "command start: %s \n",cmd);
+	fp = popen (cmd, "r");
+	printf( "command end\n");
+	if (fp == NULL)
+	{
+		printf( "The file was not opened\n");
+		return 0;
+	}
+	while( (numread = fread(buffer, sizeof(char), BUFFER_SIZE, fp)))
+	{
+		if(numread==0)
+			break;
+	}
+	printf( "The file was %s\n", buffer);
+	pclose(fp);
+#endif
+	buffer[strlen(buffer)]='\0';
+	pb = buffer;
+	if(strlen(buffer) > 0)
+		return 1;
+	return 0;
+}
+
+#ifndef XP_LINUX
+__declspec(dllexport) 
+#endif
+int pushfile(char *sfilepath,char *dfilepath)
+{
+	FILE *fp = 0;
+	int numread = 0;
+	char buffer[BUFFER_SIZE] = {0};
+	char *pb = 0;
+	char cmd[CMD_SIZE] = {0};
+	int ret = 0;
+	
+#ifndef XP_LINUX
+	TCHAR szCmdline[CMD_SIZE]={0};
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
+	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s push %s %s", adbPath,sfilepath,dfilepath);
+	else
+		return 0;
+	
+	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
+	
+	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
+		return 0;
+
+	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+		return 0;
+	if(!CreateChildProcess(szCmdline))
+		return 0;
+	if(!ReadFromPipe(buffer))
+		return 0;
+#else
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s push %s %s", adbPath,sfilepath,dfilepath);
+	else
+		return 0;
+	printf( "command start: %s \n",cmd);
+	fp = popen (cmd, "r");
+	printf( "command end\n");
+	if (fp == NULL)
+	{
+		printf( "The file was not opened\n");
+		return 0;
+	}
+	while( (numread = fread(buffer, sizeof(char), BUFFER_SIZE, fp)))
+	{
+		if(numread==0)
+			break;
+	}
+	printf( "The file was %s\n", buffer);
+	pclose(fp);
+#endif
+	buffer[strlen(buffer)]='\0';
+	pb = buffer;
+	if(strlen(buffer) > 0)
+		return 1;
+	return 0;
+}
+
+
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif

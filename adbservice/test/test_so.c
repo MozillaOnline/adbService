@@ -12,11 +12,17 @@ int main(int argc, char **argv)
     int (*setupPath)() = dlsym(handler, "setupPath");
     int (*findDevice)() = dlsym(handler, "findDevice");
     int (*setupDevice)() = dlsym(handler, "setupDevice");
-
+	int (*pullfile)() = dlsym(handler, "pullfile");
+	int (*pushfile)() = dlsym(handler, "pushfile");
 
     printf("test so setupPath\n", (*setupPath)("../linux/adb"));
+    
     printf("test so findDevice=%d\n", (*findDevice)());
     printf("test so setupDevice=%d\n", (*setupDevice)());
+    
+    printf("test so pullfile=%d\n", (*pullfile)("/system/b2g/libplc4.so", "./"));
+    printf("test so pushfile=%d\n", (*pushfile)("./libplc4.so", "/system/b2g/"));
+    
     dlclose(handler);
     return 0;
 }

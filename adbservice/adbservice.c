@@ -7,7 +7,6 @@
 #include <stdio.h> 
 #include <strsafe.h>
 
-#define BUFSIZE 4096 
 
 HANDLE g_hChildStd_OUT_Rd = NULL;
 HANDLE g_hChildStd_OUT_Wr = NULL;
@@ -16,8 +15,9 @@ BOOL CreateChildProcess(TCHAR *szCmdline);
 BOOL ReadFromPipe(CHAR *pszOutput); 
 #endif
 
-#define BUFFER_SIZE 1024 
-#define CMD_SIZE 128
+#define USB_NUM 16
+#define BUFFER_SIZE 10240
+#define CMD_SIZE 1024
 #define LOCAL_PORT 10010
 #define REMOTE_PORT 10010
 char adbPath[BUFFER_SIZE] = {0};
@@ -58,11 +58,11 @@ BOOL CreateChildProcess(TCHAR *szCmdline)
 BOOL ReadFromPipe(CHAR *pszOutput) 
 { 
    DWORD dwRead; 
-   CHAR chBuf[BUFSIZE] = {0}; 
+   CHAR chBuf[BUFFER_SIZE] = {0}; 
    BOOL bSuccess = FALSE;
    HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
    CloseHandle(g_hChildStd_OUT_Wr);
-   bSuccess = ReadFile( g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+   bSuccess = ReadFile( g_hChildStd_OUT_Rd, chBuf, BUFFER_SIZE, &dwRead, NULL);
    if( ! bSuccess || dwRead == 0 ) 
 	return 0;
 	if(pszOutput != NULL)
@@ -74,7 +74,7 @@ BOOL ReadFromPipe(CHAR *pszOutput)
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
-int findDevice()
+char** findDevice()
 {
 	char *sigstr = "List of devices attached";
 	char *devstr = "device";
@@ -83,6 +83,7 @@ int findDevice()
 	char buffer[BUFFER_SIZE] = {0};
 	char *pb = 0;
 	char cmd[CMD_SIZE] = {0};
+	char deviceslist[USB_NUM][CMD_SIZE] = {0};
 	int ret = 0;
 	
 #ifndef XP_LINUX
@@ -95,31 +96,31 @@ int findDevice()
 	if(strlen(adbPath) > 0)
 		sprintf(cmd, "%s devices", adbPath);
 	else
-		return 0;
+		return NULL;
 	
 	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
 	
 	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
-		return 0;
+		return NULL;
 
 	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
-		return 0;
+		return NULL;
 	if(!CreateChildProcess(szCmdline))
-		return 0;
+		return NULL;
 	if(!ReadFromPipe(buffer))
-		return 0;
+		return NULL;
 #else
 	if(strlen(adbPath) > 0)
 		sprintf(cmd, "%s devices", adbPath);
 	else
-		return 0;
+		return NULL;
 	printf( "command start: %s \n",cmd);
 	fp = popen (cmd, "r");
 	printf( "command end\n");
 	if (fp == NULL)
 	{
 		printf( "The file was not opened\n");
-		return 0;
+		return NULL;
 	}
 	while( (numread = fread(buffer, sizeof(char), BUFFER_SIZE, fp)))
 	{
@@ -132,21 +133,29 @@ int findDevice()
 	buffer[strlen(buffer)]='\0';
 	pb = buffer;
 	if(strncmp(pb, sigstr,strlen(sigstr)))
-		return 0;
+		return NULL;
 	pb = pb + strlen(sigstr);
 	if(!strstr(pb, devstr))
-		return 0;
+		return NULL;
 	printf( "The result is %s\n", pb);
-	return 1;
+	for(int i=0;i<USB_NUM;i++){
+		
+	}
+	return deviceslist;
 }
 
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
-int setupDevice()
+int setupDevice(char* device)
 {
     char cmd[CMD_SIZE] = {0};
 	int ret = 0;
+	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s -s %s forward tcp:%d tcp:%d", adbPath, device,LOCAL_PORT,REMOTE_PORT);
+	else
+		return 0;
 		
 #ifndef XP_LINUX
 	TCHAR szCmdline[CMD_SIZE]={0};
@@ -154,11 +163,6 @@ int setupDevice()
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
-	
-	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s forward tcp:%d tcp:%d", adbPath, LOCAL_PORT,REMOTE_PORT);
-	else
-		return 0;
 		
     MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
    
@@ -171,14 +175,8 @@ int setupDevice()
 	CreateChildProcess(szCmdline);
 	ret = ReadFromPipe(NULL); 
 #else
-
-	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s forward tcp:%d tcp:%d", adbPath, LOCAL_PORT,REMOTE_PORT);
-	else
-		return 0;
 	ret = system(cmd);
 #endif
-
 	if(ret)
 		return 0;
     return 1;

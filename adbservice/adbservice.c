@@ -15,7 +15,6 @@ BOOL CreateChildProcess(TCHAR *szCmdline);
 BOOL ReadFromPipe(CHAR *pszOutput); 
 #endif
 
-#define USB_NUM 16
 #define BUFFER_SIZE 10240
 #define CMD_SIZE 1024
 #define LOCAL_PORT 10010
@@ -74,7 +73,7 @@ BOOL ReadFromPipe(CHAR *pszOutput)
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
-char** findDevice()
+char * findDevice()
 {
 	char *sigstr = "List of devices attached";
 	char *devstr = "device";
@@ -83,7 +82,6 @@ char** findDevice()
 	char buffer[BUFFER_SIZE] = {0};
 	char *pb = 0;
 	char cmd[CMD_SIZE] = {0};
-	char deviceslist[USB_NUM][CMD_SIZE] = {0};
 	int ret = 0;
 	
 #ifndef XP_LINUX
@@ -130,18 +128,14 @@ char** findDevice()
 	printf( "The file was %s\n", buffer);
 	pclose(fp);
 #endif
-	buffer[strlen(buffer)]='\0';
 	pb = buffer;
 	if(strncmp(pb, sigstr,strlen(sigstr)))
 		return NULL;
 	pb = pb + strlen(sigstr);
-	if(!strstr(pb, devstr))
-		return NULL;
+	//strcpy(deviceList, pb);
 	printf( "The result is %s\n", pb);
-	for(int i=0;i<USB_NUM;i++){
 		
-	}
-	return deviceslist;
+	return pb;
 }
 
 #ifndef XP_LINUX
@@ -185,7 +179,7 @@ int setupDevice(char* device)
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
-int pullfile(char *sfilepath,char *dfilepath)
+int pullfile(char *device, char *sfilepath,char *dfilepath)
 {
 	FILE *fp = 0;
 	int numread = 0;
@@ -202,7 +196,7 @@ int pullfile(char *sfilepath,char *dfilepath)
 	saAttr.lpSecurityDescriptor = NULL; 
 	
 	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s pull %s %s", adbPath,sfilepath,dfilepath);
+		sprintf(cmd, "%s -s %s pull %s %s", adbPath,device ,sfilepath,dfilepath);
 	else
 		return 0;
 	
@@ -219,7 +213,7 @@ int pullfile(char *sfilepath,char *dfilepath)
 		return 0;
 #else
 	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s pull %s %s", adbPath,sfilepath,dfilepath);
+		sprintf(cmd, "%s -s %s pull %s %s", adbPath,device, sfilepath,dfilepath);
 	else
 		return 0;
 	printf( "command start: %s \n",cmd);
@@ -248,7 +242,7 @@ int pullfile(char *sfilepath,char *dfilepath)
 #ifndef XP_LINUX
 __declspec(dllexport) 
 #endif
-int pushfile(char *sfilepath,char *dfilepath)
+int pushfile(char *device, char *sfilepath,char *dfilepath)
 {
 	FILE *fp = 0;
 	int numread = 0;
@@ -265,7 +259,7 @@ int pushfile(char *sfilepath,char *dfilepath)
 	saAttr.lpSecurityDescriptor = NULL; 
 	
 	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s push %s %s", adbPath,sfilepath,dfilepath);
+		sprintf(cmd, "%s -s %s push %s %s", adbPath,device, sfilepath,dfilepath);
 	else
 		return 0;
 	
@@ -282,7 +276,7 @@ int pushfile(char *sfilepath,char *dfilepath)
 		return 0;
 #else
 	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s push %s %s", adbPath,sfilepath,dfilepath);
+		sprintf(cmd, "%s -s %s push %s %s", adbPath,device,sfilepath,dfilepath);
 	else
 		return 0;
 	printf( "command start: %s \n",cmd);

@@ -20,7 +20,7 @@ alert(ret);
 
 /******************windows**************************/
 Components.utils.import("resource://gre/modules/ctypes.jsm"); 
-var lib = ctypes.open("E:\\VCProject\\adbservice\\windows\\adbservice.dll");
+var lib = ctypes.open("E:\\VCProject\\adbservice\\windows\\servicedll\\Release\\servicedll.dll");
 
 var setupPath = lib.declare("setupPath",
                         ctypes.winapi_abi,
@@ -30,7 +30,7 @@ var setupPath = lib.declare("setupPath",
 var ret = setupPath("E:\\VCProject\\adbservice\\windows\\adbWin.exe");
 var findDevice = lib.declare("findDevice",
                          ctypes.winapi_abi,
-                         ctypes.int32_t);
-var ret = findDevice();
+                        ctypes.char.ptr);
+var devices = findDevice();
 lib.close();
-alert(ret);
+alert(devices.readString());

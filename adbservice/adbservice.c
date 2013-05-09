@@ -145,11 +145,6 @@ int setupDevice(char* device)
 {
     char cmd[CMD_SIZE] = {0};
 	int ret = 0;
-	
-	if(strlen(adbPath) > 0)
-		sprintf(cmd, "%s -s %s forward tcp:%d tcp:%d", adbPath, device,LOCAL_PORT,REMOTE_PORT);
-	else
-		return 0;
 		
 #ifndef XP_LINUX
 	TCHAR szCmdline[CMD_SIZE]={0};
@@ -157,6 +152,11 @@ int setupDevice(char* device)
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL; 
+	
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s -s %s forward tcp:%d tcp:%d", adbPath, device, LOCAL_PORT,REMOTE_PORT);
+	else
+		return 0;
 		
     MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
    
@@ -169,6 +169,11 @@ int setupDevice(char* device)
 	CreateChildProcess(szCmdline);
 	ret = ReadFromPipe(NULL); 
 #else
+
+	if(strlen(adbPath) > 0)
+		sprintf(cmd, "%s -s %s forward tcp:%d tcp:%d", adbPath,device, LOCAL_PORT,REMOTE_PORT);
+	else
+		return 0;
 	ret = system(cmd);
 #endif
 	if(ret)

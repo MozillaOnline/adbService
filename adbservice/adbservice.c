@@ -379,3 +379,51 @@ char * cleanadbservice()
 #endif
 	return NULL;
 }
+
+#ifndef XP_LINUX
+__declspec(dllexport) 
+#endif
+char * runadbcmd(char *adbcmd)
+{
+	FILE *fp = 0;
+	int numread = 0;
+	char buffer[BUFFER_SIZE] = {0};
+	char *pb = 0;
+	
+#ifndef XP_LINUX
+	TCHAR szCmdline[CMD_SIZE]={0};
+	SECURITY_ATTRIBUTES saAttr; 
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL; 
+	
+	MultiByteToWideChar(CP_ACP,0,adbcmd,strlen(adbcmd),szCmdline,CMD_SIZE); 
+	
+	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) 
+		return NULL;
+
+	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+		return NULL;
+	if(!CreateChildProcess(szCmdline))
+		return NULL;
+	if(!ReadFromPipe(buffer))
+		return NULL;
+#else
+	fp = popen (adbcmd, "r");
+	if (fp == NULL)
+	{
+		return NULL;
+	}
+	while( (numread = fread(buffer, sizeof(char), BUFFER_SIZE, fp)))
+	{
+		if(numread==0)
+			break;
+	}
+	pclose(fp);
+#endif
+	buffer[strlen(buffer)]='\0';
+	pb = buffer;
+	if(strlen(buffer) > 0)
+		return pb;
+	return NULL;
+}

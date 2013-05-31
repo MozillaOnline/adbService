@@ -134,8 +134,9 @@ char * findDevice()
 	pb = pb + strlen(sigstr);
 	//strcpy(deviceList, pb);
 	printf( "The result is %s\n", pb);
-		
-	return pb;
+	if(strlen(pb))
+		return pb;
+	return NULL;
 }
 
 #ifndef XP_LINUX
@@ -318,3 +319,63 @@ void setupPath(char *path)
 		strcpy(adbPath,path);
 }
 
+#ifndef XP_LINUX
+__declspec(dllexport)
+#endif
+char * cleanadbservice()
+{
+#ifndef XP_LINUX
+	char buffer[BUFFER_SIZE] = {0};
+	char *pb = 0;
+	char cmd[CMD_SIZE] = {0};
+	int pidlen=0, pid=0;
+	TCHAR szCmdline[CMD_SIZE]={0};
+	SECURITY_ATTRIBUTES saAttr;
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saAttr.bInheritHandle = TRUE;
+	saAttr.lpSecurityDescriptor = NULL;
+	sprintf(cmd, "cmd.exe /c netstat -ano | findstr 5037");
+	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE);
+	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) )
+		return NULL;
+	if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+		return NULL;
+	if(!CreateChildProcess(szCmdline))
+		return NULL;
+	if(!ReadFromPipe(buffer))
+		return NULL;
+	pb = strstr(buffer, "LISTENING");
+	if(pb){
+		pb += strlen("LISTENING");
+		pidlen = strstr(pb, "\r\n") - pb;
+		pb[pidlen] = 0;
+		pid = atoi(pb);
+		if(pid > 0){
+			sprintf(cmd, "cmd.exe /c Tasklist | findstr %d", pid);
+			memset(szCmdline, 0,CMD_SIZE );
+			MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE);
+			if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) )
+				return NULL;
+			if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+				return NULL;
+			if(!CreateChildProcess(szCmdline))
+				return NULL;
+			if(!ReadFromPipe(buffer))
+				return NULL;
+			return buffer;
+/*			sprintf(cmd, "cmd.exe /c taskkill /f /pid %d", pid);
+			memset(szCmdline, 0,CMD_SIZE );
+			MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE);
+			if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) )
+				return;
+			if ( ! SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0) )
+				return;
+			if(!CreateChildProcess(szCmdline))
+				return;
+			if(!ReadFromPipe(buffer))
+				return;*/
+		}
+	}
+#endif
+	return NULL;
+}

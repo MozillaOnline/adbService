@@ -56,6 +56,14 @@ char *runCmd(char *cmd)
 	siStartInfo.hStdInput = NULL;
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
     
+	siStartInfo.lpReserved = NULL;
+	siStartInfo.lpDesktop = NULL;
+	siStartInfo.lpTitle = NULL;
+	siStartInfo.dwFlags = STARTF_USESHOWWINDOW;
+	siStartInfo.wShowWindow = SW_HIDE;
+	siStartInfo.cbReserved2 = 0;
+	siStartInfo.lpReserved2 = NULL;
+
 	bSuccess = CreateProcess(NULL, 
 		szCmdline,
 		NULL,

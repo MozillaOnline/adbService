@@ -55,14 +55,10 @@ char *runCmd(char *cmd)
 	siStartInfo.hStdOutput = g_hChildStd_OUT_Wr;
 	siStartInfo.hStdInput = NULL;
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-    
-	siStartInfo.lpReserved = NULL;
-	siStartInfo.lpDesktop = NULL;
-	siStartInfo.lpTitle = NULL;
-	siStartInfo.dwFlags = STARTF_USESHOWWINDOW;
+
+	siStartInfo.dwFlags |= STARTF_USESHOWWINDOW;
 	siStartInfo.wShowWindow = SW_HIDE;
-	siStartInfo.cbReserved2 = 0;
-	siStartInfo.lpReserved2 = NULL;
+
 
 	bSuccess = CreateProcess(NULL, 
 		szCmdline,
@@ -78,8 +74,8 @@ char *runCmd(char *cmd)
 		CloseHandle(piProcInfo.hProcess);
 		CloseHandle(piProcInfo.hThread);
 		CloseHandle(g_hChildStd_OUT_Wr);
-		
 		ReadFile( g_hChildStd_OUT_Rd, chBuf, BUFFER_SIZE, &dwRead, NULL);
+		CloseHandle(g_hChildStd_OUT_Rd);
 		return chBuf;
 	}else{
 		strcpy_s(chBuf,BUFFER_SIZE,"error: CreateProcess.");

@@ -30,12 +30,34 @@ char *runCmd(char *cmd)
 	STARTUPINFO siStartInfo;
 	HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	SECURITY_ATTRIBUTES saAttr; 
-
+	char newCmd[CMD_SIZE]={0};
+	char *p = cmd;
+	int n = 0;
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
-	saAttr.lpSecurityDescriptor = NULL; 
-	
+	saAttr.lpSecurityDescriptor = NULL;
 	memset(chBuf, 0, BUFFER_SIZE);
+	while(strstr(p, "%")) {
+		memcpy(newCmd,p,strstr(p, "%") - p);
+		p = strstr(p, "%") + 1;
+		n = 0;
+		if(p[0]>='A'&&p[0]<='F')
+			n=p[0]-'A'+10;
+		else if(p[0]>='a'&&p[0]<='f')
+			n=p[0]-'a'+10;
+		else 
+			n=p[0]-'0';
+		n = n * 16;
+		if(p[1]>='A'&&p[1]<='F')
+			n += p[1]-'A'+10;
+		else if(p[1]>='a'&&p[1]<='f')
+			n += p[1]-'a'+10;
+		else 
+			n += p[1]-'0';
+		newCmd[strlen(newCmd)] = n;
+		p += 2;
+	}
+	strcat(newCmd, p);
 	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
 	
 	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) {

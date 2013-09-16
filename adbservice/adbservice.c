@@ -35,7 +35,7 @@ char *runCmd(char *cmd)
 	int n = 0;
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
-	saAttr.lpSecurityDescriptor = NULL;
+	saAttr.lpSecurityDescriptor = NULL; 
 	memset(chBuf, 0, BUFFER_SIZE);
 	while(strstr(p, "%")) {
 		memcpy(newCmd,p,strstr(p, "%") - p);
@@ -58,7 +58,7 @@ char *runCmd(char *cmd)
 		p += 2;
 	}
 	strcat(newCmd, p);
-	MultiByteToWideChar(CP_ACP,0,cmd,strlen(cmd),szCmdline,CMD_SIZE); 
+	MultiByteToWideChar(CP_ACP,0,newCmd,strlen(newCmd),szCmdline,CMD_SIZE); 
 	
 	if ( ! CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0) ) {
 		strcpy_s(chBuf,BUFFER_SIZE,"error: CreatePipe.");

@@ -38,7 +38,7 @@ char *runCmd(char *cmd)
 	saAttr.lpSecurityDescriptor = NULL; 
 	memset(chBuf, 0, BUFFER_SIZE);
 	while(strstr(p, "%")) {
-		memcpy(newCmd,p,strstr(p, "%") - p);
+		memcpy(newCmd + strlen(newCmd),p,strstr(p, "%") - p);
 		p = strstr(p, "%") + 1;
 		n = 0;
 		if(p[0]>='A'&&p[0]<='F')
